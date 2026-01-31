@@ -1,0 +1,16 @@
+{
+  "name": "enhanced-web-clipper",
+  "version": "1.0.0",
+  "description": "Enhanced Airtable web clipper with date field and linked record creation support",
+  "scripts": {
+    "start": "block run"
+  },
+  "dependencies": {
+    "@airtable/blocks": "^2.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@airtable/blocks-cli": "^2.0.0"
+  }
+}
