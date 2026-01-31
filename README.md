@@ -41,16 +41,17 @@ A powerful Airtable extension that improves upon the native web clipper with two
 - npm or yarn
 - An Airtable account with a base where you want to install the extension
 
-### Steps
+### Quick Install from GitHub
 
-1. **Install Airtable Blocks CLI** (if not already installed):
+1. **Clone this repository**:
    ```bash
-   npm install -g @airtable/blocks-cli
+   git clone https://github.com/YOUR_USERNAME/airtable-enhanced-web-clipper.git
+   cd airtable-enhanced-web-clipper
    ```
 
-2. **Navigate to the extension directory**:
+2. **Install Airtable Blocks CLI** (if not already installed):
    ```bash
-   cd "/Users/harisqureshi/Library/Mobile Documents/com~apple~CloudDocs/Personal/Vibe Coding/Claude"
+   npm install -g @airtable/blocks-cli
    ```
 
 3. **Install dependencies**:
@@ -58,7 +59,7 @@ A powerful Airtable extension that improves upon the native web clipper with two
    npm install
    ```
 
-4. **Initialize the extension in your Airtable base**:
+4. **Run the extension in your Airtable base**:
    ```bash
    block run
    ```
@@ -66,7 +67,20 @@ A powerful Airtable extension that improves upon the native web clipper with two
 5. **Follow the prompts**:
    - You'll be asked to log in to Airtable (if not already logged in)
    - Select the base where you want to install the extension
-   - The extension will open in your browser
+   - The extension will open in your browser automatically
+
+### Alternative: Install Directly in Airtable
+
+You can also install this as a custom extension directly in your Airtable base:
+
+1. Open your Airtable base
+2. Click "Extensions" in the top right
+3. Click "Add an extension"
+4. Choose "Build a custom extension"
+5. Click "Remix from GitHub" (if available) or "Start from scratch"
+6. If starting from scratch, copy the code from this repository
+
+Note: Installing from GitHub is recommended as it's easier to update and maintain.
 
 ## Usage
 
