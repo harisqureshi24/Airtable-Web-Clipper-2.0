@@ -6,11 +6,11 @@
     "start": "block run"
   },
   "dependencies": {
-    "@airtable/blocks": "^2.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "@airtable/blocks": "1.19.0",
+    "react": "16.14.0",
+    "react-dom": "16.14.0"
   },
   "devDependencies": {
-    "@airtable/blocks-cli": "^2.0.0"
+    "@airtable/blocks-cli": "3.0.1"
   }
 }
