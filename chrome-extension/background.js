@@ -5,11 +5,9 @@
 
 // Airtable API configuration
 const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
-const AIRTABLE_META_BASE = 'https://api.airtable.com/v0/meta';
 
 // Create context menu on install
 chrome.runtime.onInstalled.addListener(() => {
-  // Create context menu items
   chrome.contextMenus.create({
     id: 'clip-page',
     title: 'Clip page to Airtable',
@@ -33,59 +31,7 @@ chrome.runtime.onInstalled.addListener(() => {
     title: 'Clip image to Airtable',
     contexts: ['image']
   });
-
-  console.log('Airtable Web Clipper 2.0 installed');
 });
-
-// Handle extension icon click - toggle the persistent clipper panel
-chrome.action.onClicked.addListener(async (tab) => {
-  await toggleClipperPanel(tab);
-});
-
-/**
- * Toggle the clipper panel on a tab
- */
-async function toggleClipperPanel(tab) {
-  // Can't inject into browser internal pages
-  const blockedPrefixes = ['chrome://', 'chrome-extension://', 'about:', 'arc://', 'edge://', 'brave://'];
-  const isBlockedPage = blockedPrefixes.some(prefix => tab.url.startsWith(prefix));
-  
-  if (isBlockedPage) {
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'icons/icon128.png',
-      title: 'Airtable Web Clipper',
-      message: 'Cannot clip this page. Try on a regular webpage.'
-    });
-    return;
-  }
-
-  try {
-    await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_CLIPPER' });
-  } catch (error) {
-    // Content script not loaded, inject it first
-    try {
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ['content.js']
-      });
-      await chrome.scripting.insertCSS({
-        target: { tabId: tab.id },
-        files: ['content.css']
-      });
-      // Wait and try again
-      setTimeout(async () => {
-        try {
-          await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_CLIPPER' });
-        } catch (e) {
-          console.error('Failed to toggle clipper:', e);
-        }
-      }, 150);
-    } catch (e) {
-      console.error('Failed to inject content script:', e);
-    }
-  }
-}
 
 // Handle context menu clicks
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
@@ -120,7 +66,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
 // Handle keyboard shortcuts
 chrome.commands.onCommand.addListener(async (command) => {
-  if (command === 'quick_clip') {
+  if (command === 'toggle_clipper') {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab) {
+      await openClipperOnTab(tab);
+    }
+  } else if (command === 'quick_clip') {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab) {
       await handleQuickClip(tab, { type: 'page' });
@@ -157,15 +108,53 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 /**
+ * Open clipper on a specific tab
+ */
+async function openClipperOnTab(tab) {
+  if (!tab || !tab.url) return;
+
+  // Can't inject into browser internal pages
+  const blockedPrefixes = ['chrome://', 'chrome-extension://', 'about:', 'arc://', 'edge://', 'brave://', 'file://'];
+  if (blockedPrefixes.some(prefix => tab.url.startsWith(prefix))) {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/icon128.png',
+      title: 'Airtable Web Clipper',
+      message: 'Cannot clip this page. Try on a regular webpage.'
+    });
+    return;
+  }
+
+  try {
+    await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_CLIPPER' });
+  } catch (error) {
+    // Content script not loaded, inject it first
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content.js']
+      });
+      await chrome.scripting.insertCSS({
+        target: { tabId: tab.id },
+        files: ['content.css']
+      });
+      // Wait for script to initialize
+      await new Promise(resolve => setTimeout(resolve, 150));
+      await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_CLIPPER' });
+    } catch (e) {
+      console.error('Failed to inject content script:', e);
+    }
+  }
+}
+
+/**
  * Handle quick clip from context menu or keyboard shortcut
  */
 async function handleQuickClip(tab, clipData) {
   try {
-    // Check if configured
     const settings = await chrome.storage.sync.get(['airtableApiKey', 'quickClipBaseId', 'quickClipTableId']);
 
     if (!settings.airtableApiKey) {
-      // Open options page to configure
       chrome.runtime.openOptionsPage();
       showNotification(tab.id, {
         success: false,
@@ -175,18 +164,13 @@ async function handleQuickClip(tab, clipData) {
     }
 
     if (!settings.quickClipBaseId || !settings.quickClipTableId) {
-      // Open popup to select base/table
       chrome.action.openPopup();
       return { success: false, error: 'Please select a base and table' };
     }
 
-    // Get page data
     const pageData = await getPageData(tab.id);
-
-    // Prepare fields based on clip type
     const fields = prepareFields(clipData, pageData, tab);
 
-    // Create record
     const result = await createRecord(
       settings.quickClipBaseId,
       settings.quickClipTableId,
@@ -194,7 +178,6 @@ async function handleQuickClip(tab, clipData) {
       settings.airtableApiKey
     );
 
-    // Show success notification
     showNotification(tab.id, {
       success: true,
       message: 'Clipped to Airtable!'
@@ -243,23 +226,19 @@ async function getPageData(tabId) {
 function prepareFields(clipData, pageData, tab) {
   const fields = {};
 
-  // Try common field names
   const urlFields = ['URL', 'url', 'Link', 'link', 'Source', 'source'];
   const titleFields = ['Title', 'title', 'Name', 'name'];
   const contentFields = ['Content', 'content', 'Notes', 'notes', 'Description', 'description', 'Text', 'text'];
   const dateFields = ['Date', 'date', 'Clipped Date', 'Created', 'created'];
 
-  // Set URL
   urlFields.forEach(f => {
     fields[f] = clipData.url || pageData.url || tab.url;
   });
 
-  // Set title
   titleFields.forEach(f => {
     fields[f] = pageData.title || tab.title;
   });
 
-  // Set content based on clip type
   if (clipData.type === 'selection' && clipData.text) {
     contentFields.forEach(f => {
       fields[f] = clipData.text;
@@ -269,7 +248,6 @@ function prepareFields(clipData, pageData, tab) {
     fields['image_url'] = clipData.url;
   }
 
-  // Set date
   const today = new Date().toISOString().split('T')[0];
   dateFields.forEach(f => {
     fields[f] = today;
@@ -321,7 +299,6 @@ async function showNotification(tabId, data) {
       data
     });
   } catch (error) {
-    // Content script might not be loaded, use Chrome notification instead
     chrome.notifications.create({
       type: 'basic',
       iconUrl: 'icons/icon128.png',
@@ -330,6 +307,3 @@ async function showNotification(tabId, data) {
     });
   }
 }
-
-// Log when service worker starts
-console.log('Airtable Web Clipper 2.0 background service worker started');

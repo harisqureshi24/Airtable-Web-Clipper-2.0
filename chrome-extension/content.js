@@ -269,7 +269,7 @@
     if (!clipperState.isOpen || !clipperPanel) return;
 
     clipperPanel.classList.add('closing');
-    setTimeout(() => {
+      setTimeout(() => {
       clipperPanel.classList.add('hidden');
       clipperPanel.classList.remove('closing');
       clipperState.isOpen = false;
@@ -1285,6 +1285,4 @@
       timeout = setTimeout(() => func(...args), wait);
     };
   }
-
-  console.log('Airtable Web Clipper 2.0 content script loaded');
 })();
