@@ -14,6 +14,11 @@
   box-sizing: border-box;
 }
 
+/* Hide panel when .hidden class is applied to the panel itself */
+#airtable-clipper-panel.hidden {
+  display: none !important;
+}
+
 #airtable-clipper-panel * {
   box-sizing: border-box;
 }

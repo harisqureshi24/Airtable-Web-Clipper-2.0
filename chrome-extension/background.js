@@ -46,8 +46,11 @@ chrome.action.onClicked.addListener(async (tab) => {
  * Toggle the clipper panel on a tab
  */
 async function toggleClipperPanel(tab) {
-  // Can't inject into chrome:// pages
-  if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('about:')) {
+  // Can't inject into browser internal pages
+  const blockedPrefixes = ['chrome://', 'chrome-extension://', 'about:', 'arc://', 'edge://', 'brave://'];
+  const isBlockedPage = blockedPrefixes.some(prefix => tab.url.startsWith(prefix));
+  
+  if (isBlockedPage) {
     chrome.notifications.create({
       type: 'basic',
       iconUrl: 'icons/icon128.png',
