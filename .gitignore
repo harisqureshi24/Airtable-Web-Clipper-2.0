@@ -1,0 +1,21 @@
+node_modules/
+.airtable-blocks/
+dist/
+.DS_Store
+*.log
+.env
+.env.local
+
+# Chrome Extension
+chrome-extension/*.crx
+chrome-extension/*.pem
+chrome-extension/*.zip
+
+# Build artifacts
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
