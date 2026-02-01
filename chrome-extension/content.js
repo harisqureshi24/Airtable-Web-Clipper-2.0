@@ -992,20 +992,73 @@
       const fields = {};
 
       for (const [fieldId, value] of Object.entries(clipperState.fieldValues)) {
-        if (value !== undefined && value !== '' && value !== null) {
-          if (Array.isArray(value) && value.length === 0) continue;
+        // Skip empty values
+        if (value === undefined || value === '' || value === null) continue;
+        if (Array.isArray(value) && value.length === 0) continue;
 
-          const fieldSchema = clipperState.tableSchema.fields.find(f => f.id === fieldId);
-          if (fieldSchema) {
-            if (fieldSchema.type === 'multipleSelects' && Array.isArray(value)) {
-              fields[fieldSchema.name] = value.map(v => ({ name: v }));
-            } else if (fieldSchema.type === 'singleSelect' && typeof value === 'string') {
-              fields[fieldSchema.name] = { name: value };
-            } else {
+        const fieldSchema = clipperState.tableSchema.fields.find(f => f.id === fieldId);
+        if (!fieldSchema) continue;
+
+        // Format value based on field type
+        // With typecast: true, Airtable accepts plain strings for selects
+        switch (fieldSchema.type) {
+          case 'singleSelect':
+            // Send as plain string with typecast
+            if (typeof value === 'string' && value.trim()) {
               fields[fieldSchema.name] = value;
             }
-          }
+            break;
+
+          case 'multipleSelects':
+            // Send as array of strings with typecast
+            if (Array.isArray(value) && value.length > 0) {
+              fields[fieldSchema.name] = value.filter(v => typeof v === 'string' && v.trim());
+            }
+            break;
+
+          case 'multipleRecordLinks':
+            // Send as array of record IDs
+            if (Array.isArray(value) && value.length > 0) {
+              const recordIds = value.map(v => v.id || v).filter(Boolean);
+              if (recordIds.length > 0) {
+                fields[fieldSchema.name] = recordIds;
+              }
+            }
+            break;
+
+          case 'multipleAttachments':
+            // Send as array of {url: ...} objects
+            if (Array.isArray(value) && value.length > 0) {
+              fields[fieldSchema.name] = value.filter(v => v.url);
+            }
+            break;
+
+          case 'checkbox':
+            // Send boolean
+            fields[fieldSchema.name] = !!value;
+            break;
+
+          case 'number':
+          case 'currency':
+          case 'percent':
+          case 'rating':
+            // Send as number
+            if (typeof value === 'number' && !isNaN(value)) {
+              fields[fieldSchema.name] = value;
+            }
+            break;
+
+          default:
+            // For text, url, email, date, etc. - send as-is
+            fields[fieldSchema.name] = value;
         }
+      }
+
+      // Only submit if we have at least one field
+      if (Object.keys(fields).length === 0) {
+        hideLoading();
+        showErrorView('Please fill in at least one field');
+        return;
       }
 
       const result = await apiRequest(`${AIRTABLE_API_BASE}/${clipperState.currentBase}/${clipperState.currentTable}`, {
