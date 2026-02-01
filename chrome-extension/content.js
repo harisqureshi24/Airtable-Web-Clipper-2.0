@@ -1,14 +1,61 @@
 /**
  * Airtable Web Clipper 2.0 - Content Script
  * Extracts content from web pages for clipping
- * Enhanced with LinkedIn support and better metadata extraction
+ * Enhanced with LinkedIn support, better metadata extraction, and persistent panel
  */
 
 (function() {
   'use strict';
 
+  // Prevent multiple injections
+  if (window.__airtableClipperContent) return;
+  window.__airtableClipperContent = true;
+
   // Track selection changes
   let lastSelection = '';
+  let clipperInjected = false;
+
+  // Store metadata globally for the clipper panel
+  window.__airtableClipperMetadata = null;
+
+  /**
+   * Inject the clipper panel CSS and JS
+   */
+  function injectClipperPanel() {
+    if (clipperInjected) return;
+    clipperInjected = true;
+
+    // Inject CSS
+    const cssLink = document.createElement('link');
+    cssLink.rel = 'stylesheet';
+    cssLink.href = chrome.runtime.getURL('clipper-panel.css');
+    document.head.appendChild(cssLink);
+
+    // Inject JS
+    const script = document.createElement('script');
+    script.src = chrome.runtime.getURL('clipper-panel.js');
+    document.head.appendChild(script);
+
+    // Store metadata for the panel to use
+    window.__airtableClipperMetadata = getPageMetadata();
+  }
+
+  /**
+   * Toggle the clipper panel
+   */
+  function toggleClipper() {
+    if (!clipperInjected) {
+      injectClipperPanel();
+      // Wait a moment for scripts to load, then open
+      setTimeout(() => {
+        if (window.__airtableClipperOpen) {
+          window.__airtableClipperOpen();
+        }
+      }, 100);
+    } else if (window.__airtableClipperToggle) {
+      window.__airtableClipperToggle();
+    }
+  }
 
   // Listen for selection changes
   document.addEventListener('selectionchange', debounce(() => {
@@ -33,7 +80,31 @@
   // Listen for messages from popup or background
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     switch (message.type) {
+      case 'TOGGLE_CLIPPER':
+        toggleClipper();
+        sendResponse({ success: true });
+        break;
+
+      case 'OPEN_CLIPPER':
+        if (!clipperInjected) {
+          injectClipperPanel();
+          setTimeout(() => {
+            if (window.__airtableClipperOpen) window.__airtableClipperOpen();
+          }, 100);
+        } else if (window.__airtableClipperOpen) {
+          window.__airtableClipperOpen();
+        }
+        sendResponse({ success: true });
+        break;
+
+      case 'CLOSE_CLIPPER':
+        if (window.__airtableClipperClose) window.__airtableClipperClose();
+        sendResponse({ success: true });
+        break;
+
       case 'GET_PAGE_DATA':
+        // Update global metadata
+        window.__airtableClipperMetadata = getPageMetadata();
         sendResponse(getPageData());
         break;
 

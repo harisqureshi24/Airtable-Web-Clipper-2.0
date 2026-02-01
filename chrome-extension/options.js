@@ -8,6 +8,9 @@ class OptionsPage {
     this.api = new AirtableAPI();
     this.bases = [];
     this.baseSchemas = {};
+    this.hiddenFields = {};
+    this.currentFieldVisBase = null;
+    this.currentFieldVisTable = null;
 
     this.init();
   }
@@ -52,6 +55,21 @@ class OptionsPage {
         this.saveApiKey();
       }
     });
+
+    // Field visibility base selection
+    document.getElementById('fieldVisBase').addEventListener('change', (e) => {
+      this.onFieldVisBaseChange(e.target.value);
+    });
+
+    // Field visibility table selection
+    document.getElementById('fieldVisTable').addEventListener('change', (e) => {
+      this.onFieldVisTableChange(e.target.value);
+    });
+
+    // Save field visibility
+    document.getElementById('saveFieldVisibility').addEventListener('click', () => {
+      this.saveFieldVisibility();
+    });
   }
 
   async loadSettings() {
@@ -61,14 +79,17 @@ class OptionsPage {
       document.getElementById('apiKey').value = apiKey;
     }
 
-    // Load quick clip settings
-    const settings = await chrome.storage.sync.get(['quickClipBaseId', 'quickClipTableId']);
+    // Load quick clip settings and hidden fields
+    const settings = await chrome.storage.sync.get(['quickClipBaseId', 'quickClipTableId', 'hiddenFields']);
 
     if (settings.quickClipBaseId) {
       // Will be set after bases load
       this.savedQuickClipBase = settings.quickClipBaseId;
       this.savedQuickClipTable = settings.quickClipTableId;
     }
+
+    // Load hidden fields
+    this.hiddenFields = settings.hiddenFields || {};
   }
 
   async checkConnection() {
@@ -188,11 +209,20 @@ class OptionsPage {
       baseSelect.disabled = false;
       baseSelect.innerHTML = '<option value="">Select a base...</option>';
 
+      // Also populate field visibility base select
+      const fieldVisBase = document.getElementById('fieldVisBase');
+      fieldVisBase.disabled = false;
+      fieldVisBase.innerHTML = '<option value="">Select a base...</option>';
+
       this.bases.forEach(base => {
         const option = document.createElement('option');
         option.value = base.id;
         option.textContent = base.name;
         baseSelect.appendChild(option);
+
+        // Clone for field visibility
+        const option2 = option.cloneNode(true);
+        fieldVisBase.appendChild(option2);
       });
 
       // Restore saved selection
@@ -280,8 +310,138 @@ class OptionsPage {
     document.getElementById('quickClipTable').innerHTML = '<option value="">Select a base first...</option>';
     document.getElementById('saveQuickClip').disabled = true;
 
+    // Reset field visibility UI
+    document.getElementById('fieldVisBase').disabled = true;
+    document.getElementById('fieldVisBase').innerHTML = '<option value="">Connect to load bases...</option>';
+    document.getElementById('fieldVisTable').disabled = true;
+    document.getElementById('fieldVisTable').innerHTML = '<option value="">Select a base first...</option>';
+    document.getElementById('fieldsList').style.display = 'none';
+    document.getElementById('saveFieldVisibility').disabled = true;
+
     this.updateStatus('disconnected', 'Not connected');
     this.showAlert('success', 'Disconnected successfully');
+  }
+
+  // Field Visibility Methods
+  async onFieldVisBaseChange(baseId) {
+    const tableSelect = document.getElementById('fieldVisTable');
+    const fieldsList = document.getElementById('fieldsList');
+
+    if (!baseId) {
+      tableSelect.disabled = true;
+      tableSelect.innerHTML = '<option value="">Select a base first...</option>';
+      fieldsList.style.display = 'none';
+      document.getElementById('saveFieldVisibility').disabled = true;
+      return;
+    }
+
+    this.currentFieldVisBase = baseId;
+    tableSelect.disabled = true;
+    tableSelect.innerHTML = '<option value="">Loading tables...</option>';
+
+    try {
+      if (!this.baseSchemas[baseId]) {
+        this.baseSchemas[baseId] = await this.api.getBaseSchema(baseId);
+      }
+
+      const schema = this.baseSchemas[baseId];
+      tableSelect.disabled = false;
+      tableSelect.innerHTML = '<option value="">Select a table...</option>';
+
+      schema.tables.forEach(table => {
+        const option = document.createElement('option');
+        option.value = table.id;
+        option.textContent = table.name;
+        tableSelect.appendChild(option);
+      });
+
+    } catch (error) {
+      console.error('Error loading tables:', error);
+      tableSelect.innerHTML = '<option value="">Error loading tables</option>';
+    }
+  }
+
+  async onFieldVisTableChange(tableId) {
+    const fieldsList = document.getElementById('fieldsList');
+    const saveBtn = document.getElementById('saveFieldVisibility');
+
+    if (!tableId) {
+      fieldsList.style.display = 'none';
+      saveBtn.disabled = true;
+      return;
+    }
+
+    this.currentFieldVisTable = tableId;
+
+    const schema = this.baseSchemas[this.currentFieldVisBase];
+    const table = schema.tables.find(t => t.id === tableId);
+
+    if (!table) {
+      fieldsList.style.display = 'none';
+      return;
+    }
+
+    // Filter to editable fields only
+    const nonEditableTypes = ['autoNumber', 'createdTime', 'lastModifiedTime',
+                              'createdBy', 'lastModifiedBy', 'count',
+                              'lookup', 'rollup', 'formula', 'button'];
+
+    const editableFields = table.fields.filter(f => !nonEditableTypes.includes(f.type));
+
+    // Get hidden fields for this table
+    const tableKey = `${this.currentFieldVisBase}_${tableId}`;
+    const hiddenFieldIds = this.hiddenFields[tableKey] || [];
+
+    // Render checkboxes
+    const checkboxesContainer = document.getElementById('fieldsCheckboxes');
+    checkboxesContainer.innerHTML = '';
+
+    editableFields.forEach(field => {
+      const isHidden = hiddenFieldIds.includes(field.id);
+      const item = document.createElement('label');
+      item.className = 'field-checkbox-item';
+      item.innerHTML = `
+        <input type="checkbox" value="${field.id}" ${!isHidden ? 'checked' : ''}>
+        <span class="field-name">${field.name}</span>
+        <span class="field-type">${this.getFieldTypeBadge(field.type)}</span>
+      `;
+      checkboxesContainer.appendChild(item);
+    });
+
+    fieldsList.style.display = 'block';
+    saveBtn.disabled = false;
+  }
+
+  getFieldTypeBadge(type) {
+    const badges = {
+      'singleLineText': 'TEXT', 'multilineText': 'LONG', 'email': 'EMAIL',
+      'url': 'URL', 'phoneNumber': 'PHONE', 'number': 'NUM', 'currency': '$',
+      'percent': '%', 'date': 'DATE', 'dateTime': 'DATE', 'checkbox': 'CHECK',
+      'singleSelect': 'SELECT', 'multipleSelects': 'MULTI', 'multipleRecordLinks': 'LINK',
+      'rating': 'RATE', 'richText': 'RICH', 'multipleAttachments': 'FILE', 'barcode': 'CODE'
+    };
+    return badges[type] || type.substring(0, 4).toUpperCase();
+  }
+
+  async saveFieldVisibility() {
+    const tableKey = `${this.currentFieldVisBase}_${this.currentFieldVisTable}`;
+    const checkboxes = document.querySelectorAll('#fieldsCheckboxes input[type="checkbox"]');
+
+    // Get unchecked (hidden) fields
+    const hiddenFieldIds = [];
+    checkboxes.forEach(cb => {
+      if (!cb.checked) {
+        hiddenFieldIds.push(cb.value);
+      }
+    });
+
+    // Update hidden fields
+    this.hiddenFields[tableKey] = hiddenFieldIds;
+
+    // Save to storage
+    await chrome.storage.sync.set({ hiddenFields: this.hiddenFields });
+
+    this.showAlert('success', 'Field visibility settings saved!');
   }
 }
 

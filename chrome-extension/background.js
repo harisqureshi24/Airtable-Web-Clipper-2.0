@@ -37,6 +37,53 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('Airtable Web Clipper 2.0 installed');
 });
 
+// Handle extension icon click - toggle the persistent clipper panel
+chrome.action.onClicked.addListener(async (tab) => {
+  await toggleClipperPanel(tab);
+});
+
+/**
+ * Toggle the clipper panel on a tab
+ */
+async function toggleClipperPanel(tab) {
+  // Can't inject into chrome:// pages
+  if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('about:')) {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/icon128.png',
+      title: 'Airtable Web Clipper',
+      message: 'Cannot clip this page. Try on a regular webpage.'
+    });
+    return;
+  }
+
+  try {
+    await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_CLIPPER' });
+  } catch (error) {
+    // Content script not loaded, inject it first
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content.js']
+      });
+      await chrome.scripting.insertCSS({
+        target: { tabId: tab.id },
+        files: ['content.css']
+      });
+      // Wait and try again
+      setTimeout(async () => {
+        try {
+          await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_CLIPPER' });
+        } catch (e) {
+          console.error('Failed to toggle clipper:', e);
+        }
+      }, 150);
+    } catch (e) {
+      console.error('Failed to inject content script:', e);
+    }
+  }
+}
+
 // Handle context menu clicks
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   switch (info.menuItemId) {
@@ -81,6 +128,11 @@ chrome.commands.onCommand.addListener(async (command) => {
 // Handle messages from content script or popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
+    case 'OPEN_OPTIONS':
+      chrome.runtime.openOptionsPage();
+      sendResponse({ success: true });
+      return true;
+
     case 'QUICK_CLIP':
       handleQuickClip(sender.tab, message.data)
         .then(result => sendResponse(result))
