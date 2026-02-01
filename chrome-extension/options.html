@@ -434,6 +434,27 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+
+    /* Hotkey input */
+    .hotkey-input {
+      font-family: monospace;
+      cursor: pointer;
+      caret-color: transparent;
+    }
+
+    .hotkey-input:focus {
+      background: var(--primary-light);
+      border-color: var(--primary);
+    }
+
+    .hotkey-input.recording {
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 3px var(--primary-light); }
+      50% { box-shadow: 0 0 0 6px var(--primary-light); }
+    }
   </style>
 </head>
 <body>
@@ -544,20 +565,37 @@
         Save Quick Clip Settings
       </button>
 
-      <div class="quick-clip-section">
-        <div class="quick-clip-title">Keyboard Shortcuts</div>
-        <p style="font-size: 13px; color: var(--gray-600);">
-          Open clipper:
-          <span class="keyboard-shortcut">
-            <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd>
-          </span>
-        </p>
-        <p style="font-size: 13px; color: var(--gray-600); margin-top: 8px;">
-          Quick clip:
-          <span class="keyboard-shortcut">
-            <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>
-          </span>
-        </p>
+    </div>
+
+    <!-- Keyboard Shortcuts -->
+    <div class="card">
+      <div class="card-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/>
+        </svg>
+        Keyboard Shortcuts
+      </div>
+
+      <p style="color: var(--gray-500); font-size: 13px; margin-bottom: 16px;">
+        Customize keyboard shortcuts to open the clipper. Click on a field and press your desired key combination.
+      </p>
+
+      <div class="form-group">
+        <label for="hotkeyOpen">Open Clipper</label>
+        <input type="text" id="hotkeyOpen" class="hotkey-input" placeholder="Click and press keys..." readonly>
+        <p class="help-text">Default: Alt + Shift + A</p>
+      </div>
+
+      <div class="form-group">
+        <label for="hotkeyQuickClip">Quick Clip</label>
+        <input type="text" id="hotkeyQuickClip" class="hotkey-input" placeholder="Click and press keys..." readonly>
+        <p class="help-text">Default: Alt + Shift + S</p>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-top: 16px;">
+        <button type="button" id="saveHotkeys" class="btn btn-primary">Save Hotkeys</button>
+        <button type="button" id="resetHotkeys" class="btn btn-secondary">Reset to Default</button>
       </div>
     </div>
 

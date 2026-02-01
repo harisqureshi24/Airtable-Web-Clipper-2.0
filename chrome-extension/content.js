@@ -38,24 +38,63 @@
   // Track selection changes
   let lastSelection = '';
 
+  // Default hotkeys
+  let hotkeys = {
+    openClipper: { key: 'A', ctrl: false, alt: true, shift: true, meta: false },
+    quickClip: { key: 'S', ctrl: false, alt: true, shift: true, meta: false }
+  };
+
   // ===========================================
   // Settings Management
   // ===========================================
   async function loadSettings() {
     return new Promise(resolve => {
       chrome.storage.sync.get(
-        ['airtableApiKey', 'quickClipBaseId', 'quickClipTableId', 'hiddenFields', 'fieldOrder'],
+        ['airtableApiKey', 'quickClipBaseId', 'quickClipTableId', 'hiddenFields', 'fieldOrder', 'hotkeys'],
         (result) => {
           clipperState.apiKey = result.airtableApiKey;
           clipperState.quickClipBaseId = result.quickClipBaseId;
           clipperState.quickClipTableId = result.quickClipTableId;
           clipperState.hiddenFields = result.hiddenFields || {};
           clipperState.fieldOrder = result.fieldOrder || {};
+          if (result.hotkeys) {
+            hotkeys = result.hotkeys;
+          }
           resolve();
         }
       );
     });
   }
+
+  // ===========================================
+  // Custom Hotkey Listener
+  // ===========================================
+  function matchesHotkey(e, hotkey) {
+    if (!hotkey || !hotkey.key) return false;
+    const keyMatches = e.key.toUpperCase() === hotkey.key.toUpperCase() ||
+                       e.code === `Key${hotkey.key.toUpperCase()}`;
+    return keyMatches &&
+           e.ctrlKey === !!hotkey.ctrl &&
+           e.altKey === !!hotkey.alt &&
+           e.shiftKey === !!hotkey.shift &&
+           e.metaKey === !!hotkey.meta;
+  }
+
+  document.addEventListener('keydown', async (e) => {
+    // Check for open clipper hotkey
+    if (matchesHotkey(e, hotkeys.openClipper)) {
+      e.preventDefault();
+      toggleClipper();
+      return;
+    }
+
+    // Check for quick clip hotkey
+    if (matchesHotkey(e, hotkeys.quickClip)) {
+      e.preventDefault();
+      chrome.runtime.sendMessage({ type: 'QUICK_CLIP', data: { type: 'page' } });
+      return;
+    }
+  });
 
   // ===========================================
   // Panel Creation & Management
@@ -869,8 +908,8 @@
       const input = inputElement.tagName === 'INPUT' || inputElement.tagName === 'TEXTAREA'
         ? inputElement : inputElement.querySelector('input, textarea');
 
-      // URL/Link fields
-      if (field.type === 'url' || fieldName === 'link' || fieldName === 'url' || fieldName === 'source') {
+      // URL/Link fields - only populate if field type is URL
+      if (field.type === 'url' && (fieldName === 'link' || fieldName === 'url')) {
         if (input) {
           input.value = clipperState.pageData.url || '';
           clipperState.fieldValues[field.id] = clipperState.pageData.url;
@@ -1281,7 +1320,7 @@
   function debounce(func, wait) {
     let timeout;
     return function(...args) {
-      clearTimeout(timeout);
+        clearTimeout(timeout);
       timeout = setTimeout(() => func(...args), wait);
     };
   }

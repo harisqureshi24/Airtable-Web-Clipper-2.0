@@ -13,6 +13,11 @@ class OptionsPage {
     this.currentFieldVisBase = null;
     this.currentFieldVisTable = null;
     this.draggedItem = null;
+    this.hotkeys = {
+      openClipper: { key: 'A', ctrl: false, alt: true, shift: true, meta: false },
+      quickClip: { key: 'S', ctrl: false, alt: true, shift: true, meta: false }
+    };
+    this.recordingHotkey = null;
 
     this.init();
   }
@@ -20,6 +25,7 @@ class OptionsPage {
   async init() {
     this.bindEvents();
     await this.loadSettings();
+    await this.loadHotkeys();
     await this.checkConnection();
   }
 
@@ -71,6 +77,41 @@ class OptionsPage {
     // Save field visibility
     document.getElementById('saveFieldVisibility').addEventListener('click', () => {
       this.saveFieldVisibility();
+    });
+
+    // Hotkey inputs
+    document.getElementById('hotkeyOpen').addEventListener('focus', () => {
+      this.startRecordingHotkey('openClipper', 'hotkeyOpen');
+    });
+
+    document.getElementById('hotkeyOpen').addEventListener('blur', () => {
+      this.stopRecordingHotkey('hotkeyOpen');
+    });
+
+    document.getElementById('hotkeyQuickClip').addEventListener('focus', () => {
+      this.startRecordingHotkey('quickClip', 'hotkeyQuickClip');
+    });
+
+    document.getElementById('hotkeyQuickClip').addEventListener('blur', () => {
+      this.stopRecordingHotkey('hotkeyQuickClip');
+    });
+
+    // Hotkey capture
+    document.addEventListener('keydown', (e) => {
+      if (this.recordingHotkey) {
+        e.preventDefault();
+        this.captureHotkey(e);
+      }
+    });
+
+    // Save hotkeys
+    document.getElementById('saveHotkeys').addEventListener('click', () => {
+      this.saveHotkeys();
+    });
+
+    // Reset hotkeys
+    document.getElementById('resetHotkeys').addEventListener('click', () => {
+      this.resetHotkeys();
     });
   }
 
@@ -537,6 +578,86 @@ class OptionsPage {
     });
 
     this.showAlert('success', 'Field visibility and order saved!');
+  }
+
+  // Hotkey Methods
+  async loadHotkeys() {
+    const settings = await chrome.storage.sync.get(['hotkeys']);
+    if (settings.hotkeys) {
+      this.hotkeys = settings.hotkeys;
+    }
+    this.updateHotkeyDisplays();
+  }
+
+  updateHotkeyDisplays() {
+    document.getElementById('hotkeyOpen').value = this.formatHotkey(this.hotkeys.openClipper);
+    document.getElementById('hotkeyQuickClip').value = this.formatHotkey(this.hotkeys.quickClip);
+  }
+
+  formatHotkey(hotkey) {
+    if (!hotkey || !hotkey.key) return '';
+    const parts = [];
+    if (hotkey.ctrl) parts.push('Ctrl');
+    if (hotkey.alt) parts.push('Alt');
+    if (hotkey.shift) parts.push('Shift');
+    if (hotkey.meta) parts.push('⌘');
+    parts.push(hotkey.key.toUpperCase());
+    return parts.join(' + ');
+  }
+
+  startRecordingHotkey(hotkeyName, inputId) {
+    this.recordingHotkey = { name: hotkeyName, inputId };
+    const input = document.getElementById(inputId);
+    input.classList.add('recording');
+    input.value = 'Press keys...';
+  }
+
+  stopRecordingHotkey(inputId) {
+    const input = document.getElementById(inputId);
+    input.classList.remove('recording');
+    this.recordingHotkey = null;
+    this.updateHotkeyDisplays();
+  }
+
+  captureHotkey(e) {
+    // Ignore modifier-only keys
+    if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) {
+      return;
+    }
+
+    const hotkey = {
+      key: e.key.length === 1 ? e.key.toUpperCase() : e.key,
+      ctrl: e.ctrlKey,
+      alt: e.altKey,
+      shift: e.shiftKey,
+      meta: e.metaKey
+    };
+
+    // Must have at least one modifier
+    if (!hotkey.ctrl && !hotkey.alt && !hotkey.shift && !hotkey.meta) {
+      return;
+    }
+
+    this.hotkeys[this.recordingHotkey.name] = hotkey;
+    
+    const input = document.getElementById(this.recordingHotkey.inputId);
+    input.value = this.formatHotkey(hotkey);
+    input.classList.remove('recording');
+    input.blur();
+  }
+
+  async saveHotkeys() {
+    await chrome.storage.sync.set({ hotkeys: this.hotkeys });
+    this.showAlert('success', 'Keyboard shortcuts saved!');
+  }
+
+  resetHotkeys() {
+    this.hotkeys = {
+      openClipper: { key: 'A', ctrl: false, alt: true, shift: true, meta: false },
+      quickClip: { key: 'S', ctrl: false, alt: true, shift: true, meta: false }
+    };
+    this.updateHotkeyDisplays();
+    this.showAlert('info', 'Hotkeys reset to defaults. Click "Save Hotkeys" to apply.');
   }
 }
 
