@@ -1,217 +1,255 @@
-# Enhanced Web Clipper for Airtable
+# Airtable Web Clipper 2.0
 
-A powerful Airtable extension that improves upon the native web clipper with two critical features:
+A complete web clipping solution for Airtable with two powerful components:
 
-1. **Date Field Support** - Add date and datetime fields when clipping content
-2. **Inline Linked Record Creation** - Create new records in linked tables without leaving the clipper
+1. **Chrome Extension** - Clip any web page directly to Airtable from your browser
+2. **Airtable Block** - Enhanced record creation within Airtable with full field type support
 
 ## Features
 
-### Core Improvements Over Native Web Clipper
+### Chrome Extension
 
-- ✅ **Date & DateTime Fields**: Full support for adding dates when creating records
-- ✅ **Create Linked Records Inline**: Create new records in related tables on-the-fly
-- ✅ **All Standard Field Types**: Text, numbers, URLs, emails, checkboxes, ratings, and more
-- ✅ **Multi-Select Support**: Add multiple selections and linked records
-- ✅ **Clean UI**: Simple, intuitive interface that matches Airtable's design language
+- **One-Click Clipping** - Save web pages instantly with keyboard shortcuts
+- **Smart Content Extraction** - Automatically captures page title, URL, selected text, and metadata
+- **Full Field Support** - Works with all Airtable field types including dates, selects, and linked records
+- **Context Menu Integration** - Right-click to clip pages, selections, links, or images
+- **Quick Clip** - Configure a default table for instant clipping (Alt+Shift+S)
+- **Clean Modern UI** - Beautiful interface that matches Airtable's design
 
-### Supported Field Types
+### Airtable Block (Extension)
 
-- Single line text
-- Long text (multiline)
-- Email
-- URL
-- Phone number
-- Number
-- Currency
-- Percent
-- Date (NEW!)
-- Date & Time (NEW!)
-- Checkbox
-- Single select
-- Multiple select
-- Linked records (with inline creation - NEW!)
-- Rating
+- **Date & DateTime Fields** - Full support for adding dates when creating records
+- **Inline Linked Record Creation** - Create new records in related tables on-the-fly
+- **Attachment Support** - Add attachments via URL
+- **Interactive Rating Fields** - Click-to-rate star interface
+- **Toast Notifications** - Elegant feedback instead of browser alerts
+- **All Standard Field Types** - Text, numbers, URLs, emails, checkboxes, and more
 
 ## Installation
 
-### Prerequisites
-
-- Node.js (v14 or higher)
-- npm or yarn
-- An Airtable account with a base where you want to install the extension
-
-### Quick Install from GitHub
+### Chrome Extension
 
 1. **Clone this repository**:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/airtable-enhanced-web-clipper.git
-   cd airtable-enhanced-web-clipper
+   git clone https://github.com/YOUR_USERNAME/Airtable-Web-Clipper-2.0.git
+   cd Airtable-Web-Clipper-2.0
    ```
 
-2. **Install Airtable Blocks CLI** (if not already installed):
+2. **Generate icons** (if not already generated):
+   - Open `chrome-extension/icons/generate-icons.html` in Chrome
+   - Click "Download All" and save icons to the `icons/` folder
+
+3. **Load in Chrome**:
+   - Open Chrome and go to `chrome://extensions/`
+   - Enable "Developer mode" (toggle in top right)
+   - Click "Load unpacked"
+   - Select the `chrome-extension` folder
+
+4. **Configure**:
+   - Click the extension icon in the toolbar
+   - Click "Set Up Connection"
+   - Enter your [Airtable Personal Access Token](https://airtable.com/create/tokens)
+   - Select your default base and table for quick clipping
+
+### Airtable Block
+
+1. **Install Airtable Blocks CLI** (if not already installed):
    ```bash
    npm install -g @airtable/blocks-cli
    ```
 
-3. **Install dependencies**:
+2. **Install dependencies**:
    ```bash
    npm install
    ```
 
-4. **Run the extension in your Airtable base**:
+3. **Run the block**:
    ```bash
+   npm start
+   # or
    block run
    ```
 
-5. **Follow the prompts**:
-   - You'll be asked to log in to Airtable (if not already logged in)
-   - Select the base where you want to install the extension
-   - The extension will open in your browser automatically
-
-### Alternative: Install Directly in Airtable
-
-You can also install this as a custom extension directly in your Airtable base:
-
-1. Open your Airtable base
-2. Click "Extensions" in the top right
-3. Click "Add an extension"
-4. Choose "Build a custom extension"
-5. Click "Remix from GitHub" (if available) or "Start from scratch"
-6. If starting from scratch, copy the code from this repository
-
-Note: Installing from GitHub is recommended as it's easier to update and maintain.
+4. **Follow the prompts** to connect to your Airtable base
 
 ## Usage
 
-### Basic Workflow
+### Chrome Extension
 
-1. **Select a Table**: Choose which table you want to create records in
-2. **Fill in Fields**: The extension will show all available fields for that table
-3. **Add Dates**: Use the date picker for any date/datetime fields
-4. **Link Records**:
-   - Select existing records from the dropdown
-   - Or click "Create new record" to add a new linked record inline
-5. **Submit**: Click "Create Record" to save
+#### Quick Clip (Fastest)
+- Press **Alt+Shift+S** to instantly clip the current page to your default table
+- Great for quickly saving articles, bookmarks, or research
 
-### Creating Linked Records
+#### Full Clipper
+- Press **Alt+Shift+A** or click the extension icon
+- Select a base and table
+- Fill in additional fields as needed
+- Click "Clip to Airtable"
 
-When you encounter a linked record field:
+#### Context Menu
+- Right-click on any page, selection, link, or image
+- Choose "Clip to Airtable" from the context menu
 
-1. You can select existing records from the dropdown
-2. Click the "Create new record in [Table Name]" button
-3. A modal will open with fields from the linked table
-4. Fill in the required information
-5. Click "Create Record" to add it
-6. The new record will automatically be linked to your main record
+### Airtable Block
 
-### Working with Date Fields
+1. Open your Airtable base
+2. Add the "Enhanced Web Clipper" extension
+3. Select a table from the dropdown
+4. Fill in the fields you need
+5. Click "Create Record"
 
-Date fields now use a native datetime picker:
-- Select both date and time
-- The extension automatically formats it for Airtable
-- Works with both Date and DateTime field types
+## Supported Field Types
+
+| Field Type | Chrome Extension | Airtable Block |
+|------------|-----------------|----------------|
+| Single line text | ✅ | ✅ |
+| Long text | ✅ | ✅ |
+| Rich text | ✅ | ✅ |
+| Email | ✅ | ✅ |
+| URL | ✅ | ✅ |
+| Phone number | ✅ | ✅ |
+| Number | ✅ | ✅ |
+| Currency | ✅ | ✅ |
+| Percent | ✅ | ✅ |
+| Date | ✅ | ✅ |
+| Date & Time | ✅ | ✅ |
+| Duration | ✅ | ✅ |
+| Checkbox | ✅ | ✅ |
+| Single select | ✅ | ✅ |
+| Multiple select | ✅ | ✅ |
+| Linked records | ✅ | ✅ |
+| Rating | ✅ | ✅ |
+| Attachments (URL) | ✅ | ✅ |
+| Barcode | ✅ | ✅ |
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| Alt+Shift+A | Open the clipper popup |
+| Alt+Shift+S | Quick clip to default table |
+
+## API Key Setup
+
+### Getting Your Personal Access Token
+
+1. Go to [Airtable's token page](https://airtable.com/create/tokens)
+2. Click "Create new token"
+3. Name it (e.g., "Web Clipper")
+4. Add scopes:
+   - `data.records:read` - Read records
+   - `data.records:write` - Create/update records
+   - `schema.bases:read` - Read base schema
+5. Add access to your bases
+6. Click "Create token"
+7. Copy the token (starts with `pat`)
+
+### Security Notes
+
+- Your API token is stored securely in Chrome's sync storage
+- The token is never sent to any third-party servers
+- Only Airtable's official API endpoints are used
+
+## Project Structure
+
+```
+Airtable-Web-Clipper-2.0/
+├── chrome-extension/           # Chrome Extension
+│   ├── manifest.json          # Extension manifest (v3)
+│   ├── popup.html            # Main popup UI
+│   ├── popup.css             # Popup styles
+│   ├── popup.js              # Popup logic
+│   ├── content.js            # Content script
+│   ├── content.css           # Content styles
+│   ├── background.js         # Service worker
+│   ├── options.html          # Settings page
+│   ├── options.js            # Settings logic
+│   ├── lib/
+│   │   └── airtable-api.js   # API helper
+│   └── icons/                # Extension icons
+│       ├── icon.svg          # Source SVG
+│       ├── icon16.png
+│       ├── icon32.png
+│       ├── icon48.png
+│       └── icon128.png
+├── frontend/
+│   └── index.tsx             # Airtable Block code
+├── .block/
+│   └── remote.json           # Airtable block config
+├── block.json                # Block manifest
+├── package.json              # Dependencies
+└── README.md                 # This file
+```
 
 ## Development
 
-### Project Structure
+### Chrome Extension
 
+The extension uses Chrome's Manifest V3 with:
+- Service worker for background tasks
+- Content scripts for page interaction
+- Popup for main UI
+- Options page for settings
+
+To modify:
+1. Edit files in `chrome-extension/`
+2. Go to `chrome://extensions/`
+3. Click the refresh icon on the extension
+
+### Airtable Block
+
+The block uses React with the Airtable Blocks SDK:
+- TypeScript for type safety
+- Airtable UI components for consistent design
+- Hooks for state management
+
+To develop:
+```bash
+npm start
 ```
-enhanced-web-clipper/
-├── frontend/
-│   └── index.tsx          # Main extension component
-├── block.json             # Extension configuration
-├── package.json           # Dependencies
-└── README.md             # Documentation
-```
-
-### Key Components
-
-- **Main Component**: Renders the form with all field types
-- **Field Renderer**: Dynamically renders appropriate input for each field type
-- **Linked Record Modal**: Handles inline creation of related records
-- **Form Submission**: Creates records with proper field formatting
-
-### Customization
-
-You can customize the extension by modifying `frontend/index.tsx`:
-
-- Add custom field validation
-- Implement auto-fill from clipboard
-- Add browser extension integration for actual web clipping
-- Customize the UI theme
-
-## Technical Details
-
-### Date Field Implementation
-
-Date fields are handled using the HTML5 `datetime-local` input, which provides:
-- Native date/time picker UI
-- Automatic validation
-- Conversion to ISO format for Airtable
-
-```typescript
-<Input
-    type="datetime-local"
-    onChange={(e) => {
-        const isoDate = new Date(e.target.value).toISOString();
-        handleFieldChange(fieldId, isoDate);
-    }}
-/>
-```
-
-### Linked Record Creation
-
-The extension creates a two-step process:
-1. Creates the new record in the linked table
-2. Adds the record ID to the linking field in the main record
-
-```typescript
-const recordId = await linkedTable.createRecordAsync(newRecordData);
-handleFieldChange(fieldId, [...currentValue, { id: recordId }]);
-```
-
-## Limitations
-
-- Attachment fields require file upload (not yet implemented)
-- Formula and rollup fields are read-only (as designed)
-- Some complex field types may have limited support
-- Browser integration for automatic URL/title detection requires additional setup
-
-## Future Enhancements
-
-Potential features for future versions:
-- Browser extension for actual web page clipping
-- Auto-detect URL and page title from browser
-- Batch record creation
-- Custom field templates
-- Keyboard shortcuts
-- Attachment support via drag-and-drop
 
 ## Troubleshooting
 
-### Extension won't load
-- Make sure you've run `npm install`
-- Check that you're in the correct directory
-- Verify your Airtable CLI is up to date
+### Chrome Extension
 
-### Can't create records
+**"API key not configured"**
+- Click the extension icon → Settings
+- Enter your Personal Access Token
+
+**"Failed to load bases"**
+- Verify your API token is correct
+- Check that the token has the required scopes
+- Ensure you have access to at least one base
+
+**Quick clip not working**
+- Go to Settings and configure your default base/table
+- Make sure the table has the fields you need
+
+### Airtable Block
+
+**"Extension won't load"**
+- Run `npm install` first
+- Make sure you're logged into Airtable CLI
+
+**"Can't create records"**
 - Verify you have edit permissions in the base
 - Check that required fields are filled
 - Some field types may require specific formatting
 
-### Linked record creation fails
-- Ensure you have permissions in both tables
-- Check that the linked table has the necessary fields
-- Required fields in the linked table must be filled
+## Contributing
 
-## Support
-
-For issues or questions:
-- Check the Airtable Blocks SDK documentation
-- Review the code in `frontend/index.tsx`
-- Test in a development base before production use
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## License
 
-This is a custom extension for personal use. Modify and distribute as needed.
+MIT License - feel free to use and modify as needed.
+
+## Acknowledgments
+
+- Built with [Airtable Blocks SDK](https://airtable.com/developers/blocks)
+- Chrome Extension uses [Manifest V3](https://developer.chrome.com/docs/extensions/mv3/)
+- Icons designed with Airtable's color palette
